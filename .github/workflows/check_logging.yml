@@ -37,6 +37,7 @@ jobs:
 
             - name: Set output variables
               id: set-output
+              if: steps.logcheck.outputs.failed == 'true'
               run: |
                   DETAILS=$(echo "${{ steps.logcheck.outputs.logging_info_violations_details }}")
                   if [ -z "$DETAILS" ]; then
