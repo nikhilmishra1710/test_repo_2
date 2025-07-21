@@ -26,7 +26,7 @@ jobs:
 
             - name: Determine diff range
               id: diff
-              run: echo "range=origin/main...HEAD" >> $GITHUB_OUTPUT
+              run: echo "range=origin/test1...HEAD" >> $GITHUB_OUTPUT
 
             - name: Run logging check
               id: logcheck
