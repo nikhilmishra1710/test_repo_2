@@ -1,0 +1,73 @@
+name: check-logging
+
+on:
+    pull_request:
+        branches: [main]
+
+permissions:
+    contents: read
+    pull-requests: write
+    checks: write
+
+jobs:
+    check-logging:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout PR code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: 3.x
+
+            - name: Determine diff range
+              id: diff
+              run: echo "range=origin/main...HEAD" >> $GITHUB_OUTPUT
+
+            - name: Run logging check
+              id: logcheck
+              env:
+                  DIFF_RANGE: ${{ steps.diff.outputs.range }}
+              run: |
+                  python .github/scripts/check_logging.py
+
+            - name: Set output variables
+              id: set-output
+              run: |
+                  DETAILS=$(echo "${{ steps.logcheck.outputs.logging_info_violations_details }}")
+                  if [ -z "$DETAILS" ]; then
+                      DETAILS="No `logging.info` violations found."
+                  else
+                      DETAILS=$(echo "$DETAILS" | sed 's/;/\n/g')
+                  fi
+                  {
+                    echo "details<<EOF"
+                    echo "$DETAILS"
+                    echo "EOF"
+                  } >> "$GITHUB_OUTPUT"
+
+
+            - name: Comment on PR (violations found)
+              if: steps.logcheck.outputs.failed == 'true'
+              uses: marocchino/sticky-pull-request-comment@v2
+              with:
+                  header: logging-info-warning
+                  message: |
+                      ⚠️ Detected ${{ steps.logcheck.outputs.logging_info_violations_count }} `logging.info` statements in the code.
+                      Please review the following occurrences:
+                      ```
+                      ${{ steps.set-output.outputs.details }}
+                      ```                      
+                      See the **Files changed** tab for inline annotations.
+
+            - name: Comment on PR (no violations)
+              if: steps.logcheck.outputs.failed != 'true'
+              uses: marocchino/sticky-pull-request-comment@v2
+              with:
+                  header: logging-info-warning
+                  message: |
+                      ✅ No `logging.info` violations found.
