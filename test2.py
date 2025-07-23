@@ -13,5 +13,8 @@ class Test:
         assert True
         
     def test_no_logging(self):
+        logging.info("This is not a test log")
         assert True
+        
+        
         
