@@ -51,7 +51,7 @@ jobs:
           if [ -z "$DETAILS" ]; then
               DETAILS="No \`logging.info\` violations found."
           else
-              DETAILS=$(echo "$DETAILS" | sed 's/;/\n/g')
+              DETAILS=$(echo $DETAILS | sed 's/;/\n/g')
           fi
           echo "details<<EOF" >> "$GITHUB_OUTPUT"
           echo "$DETAILS" >> "$GITHUB_OUTPUT"
