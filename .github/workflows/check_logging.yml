@@ -1,72 +1,77 @@
 name: check-logging
 
 on:
-    pull_request:
-        branches: [test1]
+  pull_request:
+    branches: [master]
 
 permissions:
-    contents: read
-    pull-requests: write
-    checks: write
+  contents: read
+  pull-requests: write
+  checks: write
 
 jobs:
-    check-logging:
-        runs-on: ubuntu-latest
+  check-logging:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout PR code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+    steps:
+      - name: Clone PR code manually
+        run: |
+          git init
+          git remote add origin "${{ github.event.repository.clone_url }}"
+          git fetch origin
+          git checkout -b pr_branch origin/${{ github.head_ref }}
 
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                  python-version: 3.x
+      - name: Setup Python manually
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          python3 --version
+          pip3 install -r requirements.txt
 
-            - name: Determine diff range
-              id: diff
-              run: echo "range=origin/test1...HEAD" >> $GITHUB_OUTPUT
+      - name: Determine diff range
+        id: diff
+        run: echo "range=origin/master...HEAD" >> "$GITHUB_OUTPUT"
 
-            - name: Run logging check
-              id: logcheck
-              env:
-                  DIFF_RANGE: ${{ steps.diff.outputs.range }}
-              run: |
-                  python .github/scripts/check_logging.py
+      - name: Run logging check
+        id: logcheck
+        env:
+          DIFF_RANGE: ${{ steps.diff.outputs.range }}
+        run: |
+          python3 .github/scripts/check_logging.py)
 
-            - name: Set output variables
-              id: set-output
-              if: steps.logcheck.outputs.failed == 'true'
-              run: |
-                  DETAILS=$(echo "${{ steps.logcheck.outputs.logging_info_violations_details }}")
-                  if [ -z "$DETAILS" ]; then
-                      DETAILS="No `logging.info` violations found."
-                  else
-                      DETAILS=$(echo "$DETAILS" | sed 's/;/\n/g')
-                  fi
-                  {
-                    echo "details<<EOF"
-                    echo "$DETAILS"
-                    echo "EOF"
-                  } >> "$GITHUB_OUTPUT"
+      - name: Format output
+        if: steps.logcheck.outputs.failed == 'true'
+        id: set-output
+        run: |
+          DETAILS="${{ steps.logcheck.outputs.logging_info_violations_details }}"
+          if [ -z "$DETAILS" ]; then
+              DETAILS="No \`logging.info\` violations found."
+          else
+              DETAILS=$(echo "$DETAILS" | sed 's/;/\n/g')
+          fi
+          echo "details<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$DETAILS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
+      - name: Comment on PR (violations found)
+        if: steps.logcheck.outputs.failed == 'true'
+        run: |
+          body="⚠️ Detected ${{ steps.logcheck.outputs.logging_info_violations_count }} \`logging.info\` statements in the code.
+                \`\`\`
+                ${{ steps.set-output.outputs.details }}
+                \`\`\`"
 
-            - name: Comment on PR (violations found)
-              if: steps.logcheck.outputs.failed == 'true'
-              uses: marocchino/sticky-pull-request-comment@v2
-              with:
-                  header: logging-info-warning
-                  message: |
-                      ⚠️ Detected ${{ steps.logcheck.outputs.logging_info_violations_count }} `logging.info` statements in the code.
-                      ```
-                      ${{ steps.set-output.outputs.details }}
-                      ```                      
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"body\": \"$body\"}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
 
-            - name: Comment on PR (no violations)
-              if: steps.logcheck.outputs.failed != 'true'
-              uses: marocchino/sticky-pull-request-comment@v2
-              with:
-                  header: logging-info-warning
-                  message: |
-                      ✅ No `logging.info` violations found.
+      - name: Comment on PR (no violations)
+        if: steps.logcheck.outputs.failed != 'true'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"body": "✅ No `logging.info` violations found."}' \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
