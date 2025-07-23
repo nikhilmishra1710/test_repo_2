@@ -3,6 +3,7 @@ import subprocess
 import sys
 import re
 from typing import List, Tuple
+import json
 
 
 def get_changed_files(diff_range: str) -> List[str]:
@@ -77,7 +78,7 @@ def main():
     if github_output:
         with open(github_output, "a") as f:
             f.write(f"logging_info_violations_count={total_violations}\n") 
-            f.write(f"logging_info_violations_details={op}\n")
+            f.write(f"logging_info_violations_details={json.dumps(op)}\n")
             f.write(f"failed={'true' if total_violations > 0 else 'false'}\n")
 
 
