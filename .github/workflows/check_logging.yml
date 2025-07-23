@@ -47,7 +47,7 @@ jobs:
         if: steps.logcheck.outputs.failed == 'true'
         id: set-output
         run: |
-          DETAILS="${{ steps.logcheck.outputs.logging_info_violations_details }}"
+          DETAILS=${{ steps.logcheck.outputs.logging_info_violations_details }}
           if [ -z "$DETAILS" ]; then
               DETAILS="No \`logging.info\` violations found."
           else
