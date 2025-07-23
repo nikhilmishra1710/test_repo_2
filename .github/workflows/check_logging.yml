@@ -1,73 +1,50 @@
 name: check-logging
 
 on:
-    pull_request:
-        branches: [main]
+  pull_request:
+    branches: [test1]
 
 permissions:
-    contents: read
-    pull-requests: write
-    checks: write
+  contents: read
+  pull-requests: write
+  checks: write
 
 jobs:
-    check-logging:
-        runs-on: ubuntu-latest
+  check-logging:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout PR code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+    steps:
+      - name: Checkout and fetch base
+        run: |
+            git init
+            git remote add origin "${{ github.event.repository.clone_url }}"
+            git fetch origin test1
+            git fetch origin ${{ github.head_ref }}
+            git checkout -b pr_branch origin/${{ github.head_ref }}
+            git branch --track test1 origin/test1
 
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                  python-version: 3.x
-
-            - name: Determine diff range
-              id: diff
-              run: echo "range=origin/main...HEAD" >> $GITHUB_OUTPUT
-
-            - name: Run logging check
-              id: logcheck
-              env:
-                  DIFF_RANGE: ${{ steps.diff.outputs.range }}
-              run: |
-                  python .github/scripts/check_logging.py
-
-            - name: Set output variables
-              id: set-output
-              run: |
-                  DETAILS=$(echo "${{ steps.logcheck.outputs.logging_info_violations_details }}")
-                  if [ -z "$DETAILS" ]; then
-                      DETAILS="No `logging.info` violations found."
-                  else
-                      DETAILS=$(echo "$DETAILS" | sed 's/;/\n/g')
-                  fi
-                  {
-                    echo "details<<EOF"
-                    echo "$DETAILS"
-                    echo "EOF"
-                  } >> "$GITHUB_OUTPUT"
+      - name: Determine diff range
+        id: diff
+        run: |
+            base=$(git merge-base test1 pr_branch)
+            echo "range=$base...pr_branch" >> "$GITHUB_OUTPUT"
 
 
-            - name: Comment on PR (violations found)
-              if: steps.logcheck.outputs.failed == 'true'
-              uses: marocchino/sticky-pull-request-comment@v2
-              with:
-                  header: logging-info-warning
-                  message: |
-                      ⚠️ Detected ${{ steps.logcheck.outputs.logging_info_violations_count }} `logging.info` statements in the code.
-                      Please review the following occurrences:
-                      ```
-                      ${{ steps.set-output.outputs.details }}
-                      ```                      
-                      See the **Files changed** tab for inline annotations.
+      - name: Setup Python manually
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          python3 --version
 
-            - name: Comment on PR (no violations)
-              if: steps.logcheck.outputs.failed != 'true'
-              uses: marocchino/sticky-pull-request-comment@v2
-              with:
-                  header: logging-info-warning
-                  message: |
-                      ✅ No `logging.info` violations found.
+      - name: Run logging check
+        id: logcheck
+        env:
+          DIFF_RANGE: ${{ steps.diff.outputs.range }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 .github/scripts/check_logging.py
+
+      
+
