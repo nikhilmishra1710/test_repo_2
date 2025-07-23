@@ -4,7 +4,7 @@ import sys
 import re
 from typing import List, Tuple
 import json
-
+import requests
 
 def get_changed_files(diff_range: str) -> List[str]:
     result = subprocess.run(
@@ -58,6 +58,53 @@ def check_logging_info(filepath: str, diff_range: str) -> int:
         print(f"Failed to parse diff for {filepath}: {e}", file=sys.stderr)
     return count, output
 
+def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
+    header = "<!-- logging-info-warning -->"
+    if total_violations == 0:
+        body = f"{header}\nNo `logging.info` violations found."
+    else:    
+        details = json.dumps(violations, indent=2)
+        body = f"{header}\n⚠️ Detected {total_violations} `logging.info` statements in the code.\n```json\n{details}\n```"
+    
+    try:
+        repo = os.environ.get("GITHUB_REPOSITORY")
+        pr_number = os.environ.get("PR_NUMBER") or os.environ.get("GITHUB_REF", "").split("/")[-1]
+        token = os.environ.get("GITHUB_TOKEN")
+
+        if not all([repo, pr_number, token]):
+            print("Missing GITHUB_REPOSITORY, PR_NUMBER, or GITHUB_TOKEN", file=sys.stderr)
+            return
+
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github+json"
+        }
+
+        comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+        response = requests.get(comments_url, headers=headers)
+        if response.status_code != 200:
+            print(f"Failed to fetch comments: {response.text}", file=sys.stderr)
+            return
+
+        comments = response.json()
+        comment_id = None
+        for comment in comments:
+            if comment["body"].startswith(header):
+                comment_id = comment["id"]
+                break
+
+        if comment_id:
+            update_url = f"https://api.github.com/repos/{repo}/issues/comments/{comment_id}"
+            response = requests.patch(update_url, headers=headers, json={"body": body})
+            if response.status_code != 200:
+                print(f"Failed to update comment: {response.text}", file=sys.stderr)
+        else:
+            response = requests.post(comments_url, headers=headers, json={"body": body})
+            if response.status_code != 201:
+                print(f"Failed to create comment: {response.text}", file=sys.stderr)
+    except Exception as e:
+        print(f"Failed to post comment: {e}", file=sys.stderr)
+        return
 
 def main():
     diff_range = os.environ.get("DIFF_RANGE", "HEAD^..HEAD")

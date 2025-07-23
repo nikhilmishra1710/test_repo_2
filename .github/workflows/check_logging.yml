@@ -40,66 +40,11 @@ jobs:
         id: logcheck
         env:
           DIFF_RANGE: ${{ steps.diff.outputs.range }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           python3 .github/scripts/check_logging.py
 
-      - name: Format violations into markdown
-        if: steps.logcheck.outputs.failed == 'true'
-        id: set-output
-        run: |
-            raw='${{ steps.logcheck.outputs.logging_info_violations_details }}'
-            echo "$raw" | jq -r '.[] | "\(.file):\(.line): \(.message)"' > formatted.txt
-            {
-            echo "details<<EOF"
-            cat formatted.txt
-            echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-
-      - name: Sticky comment (violations found)
-        if: steps.logcheck.outputs.failed == 'true'
-        env:
-            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            header="<!-- logging-info-warning -->"
-            details="$(cat <<EOF
-                ${{ steps.set-output.outputs.details }}
-                EOF
-                )"
-
-            body="$header
-            ⚠️ Detected ${{ steps.logcheck.outputs.logging_info_violations_count }} \`logging.info\` statements in the code.
-            \`\`\`
-            $details
-            \`\`\`"
-
-            comment_id=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-            --jq ".[] | select(.body | startswith(\"$header\")) | .id")
-
-            if [ -n "$comment_id" ]; then
-            gh api repos/${{ github.repository }}/issues/comments/$comment_id \
-                -X PATCH -f body="$body"
-            else
-            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-                -f body="$body"
-            fi
-
-      - name: Sticky comment (no violations)
-        if: steps.logcheck.outputs.failed != 'true'
-        env:
-            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            header="<!-- logging-info-warning -->"
-            body="$header
-            ✅ No \`logging.info\` violations found."
-
-            comment_id=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-            --jq ".[] | select(.body | startswith(\"$header\")) | .id")
-
-            if [ -n "$comment_id" ]; then
-            gh api repos/${{ github.repository }}/issues/comments/$comment_id \
-                -X PATCH -f body="$body"
-            else
-            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-                -f body="$body"
-            fi
+      
 
