@@ -63,8 +63,8 @@ def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
     if total_violations == 0:
         body = f"{header}\nNo `logging.info` violations found."
     else:    
-        details = json.dumps(violations, indent=2)
-        body = f"{header}\n⚠️ Detected {total_violations} `logging.info` statements in the code.\n```json\n{details}\n```"
+        details = "\n".join("{}: Line {}: {}".format(v['file'], v['line'], v['details']) for v in violations)
+        body = f"{header}\n⚠️ Detected {total_violations} `logging.info` statements in the code.\n```\n{details}\n```"
     
     try:
         repo = os.environ.get("GITHUB_REPOSITORY")
