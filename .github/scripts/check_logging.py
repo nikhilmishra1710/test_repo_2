@@ -55,7 +55,7 @@ def check_logging_info(filepath: str, diff_range: str) -> int:
                 output += f"{filepath}:{lineno}: {line}"
                 count += 1
     except subprocess.CalledProcessError as e:
-        print(f"Failed to parse diff for {filepath}: {e}", file=sys.stderr)
+        print(f"Failed to parse diff for {filepath}: {e}")
     return count, output
 
 def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
@@ -72,7 +72,7 @@ def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
         token = os.environ.get("GITHUB_TOKEN")
 
         if not all([repo, pr_number, token]):
-            print("Missing GITHUB_REPOSITORY, PR_NUMBER, or GITHUB_TOKEN", file=sys.stderr)
+            print("Missing GITHUB_REPOSITORY, PR_NUMBER, or GITHUB_TOKEN")
             return
 
         headers = {
@@ -83,7 +83,7 @@ def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
         comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
         response = requests.get(comments_url, headers=headers)
         if response.status_code != 200:
-            print(f"Failed to fetch comments: {response.text}", file=sys.stderr)
+            print(f"Failed to fetch comments: {response.text}")
             return
 
         comments = response.json()
@@ -97,13 +97,13 @@ def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
             update_url = f"https://api.github.com/repos/{repo}/issues/comments/{comment_id}"
             response = requests.patch(update_url, headers=headers, json={"body": body})
             if response.status_code != 200:
-                print(f"Failed to update comment: {response.text}", file=sys.stderr)
+                print(f"Failed to update comment: {response.text}")
         else:
             response = requests.post(comments_url, headers=headers, json={"body": body})
             if response.status_code != 201:
-                print(f"Failed to create comment: {response.text}", file=sys.stderr)
+                print(f"Failed to create comment: {response.text}")
     except Exception as e:
-        print(f"Failed to post comment: {e}", file=sys.stderr)
+        print(f"Failed to post comment: {e}")
         return
 
 def main():
