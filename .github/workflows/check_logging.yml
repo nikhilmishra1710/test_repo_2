@@ -14,22 +14,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clone PR code manually
+      - name: Checkout and fetch base
         run: |
-          git init
-          git remote add origin "${{ github.event.repository.clone_url }}"
-          git fetch origin
-          git checkout -b pr_branch origin/${{ github.head_ref }}
+            git init
+            git remote add origin "${{ github.event.repository.clone_url }}"
+            git fetch origin master
+            git fetch origin ${{ github.head_ref }}
+            git checkout -b pr_branch origin/${{ github.head_ref }}
+            git branch --track master origin/master
+
+      - name: Determine diff range
+        id: diff
+        run: |
+            base=$(git merge-base master pr_branch)
+            echo "range=$base...pr_branch" >> "$GITHUB_OUTPUT"
+
 
       - name: Setup Python manually
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
           python3 --version
-
-      - name: Determine diff range
-        id: diff
-        run: echo "range=origin/master...HEAD" >> "$GITHUB_OUTPUT"
 
       - name: Run logging check
         id: logcheck
