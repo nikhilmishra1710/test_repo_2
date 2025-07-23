@@ -62,24 +62,33 @@ def check_logging_info(filepath: str, diff_range: str) -> int:
 def main():
     diff_range = os.environ.get("DIFF_RANGE", "HEAD^..HEAD")
     changed_files = get_changed_files(diff_range)
-
-    file_counts = {}
+    
+    if not changed_files:
+        print("No Python files changed in the specified diff range.")
+        print("::set-output name=logging_info_violations_details::[]")
+        print("::set-output name=failed::false")
+        print("::set-output name=logging_info_violations_count::0")
+        return
     total_violations = 0
-    op = ""
+    violations = []
     for file in changed_files:
         if os.path.exists(file):
             count, output = check_logging_info(file, diff_range)
             if count > 0:
-                file_counts[file] = count
                 total_violations += count
-                op += output
+                op = output.split(';')
+                violations.append({"file": op[0], "line": op[1], "details": op[2].strip()})
 
-    github_output = os.environ.get("GITHUB_OUTPUT")
-    if github_output:
-        with open(github_output, "a") as f:
-            f.write(f"logging_info_violations_count={total_violations}\n") 
-            f.write(f"logging_info_violations_details={json.dumps(op)}\n")
-            f.write(f"failed={'true' if total_violations > 0 else 'false'}\n")
+    if total_violations == 0:
+        print("No `logging.info` violations found.")
+        print("::set-output name=logging_info_violations_details::[]")
+        print("::set-output name=failed::false")
+        print("::set-output name=logging_info_violations_count::0")
+        return
+    
+    print(f"::set-output name=logging_info_violations_details::{json.dumps(violations)}")
+    print(f"::set-output name=failed::true")
+    print(f"::set-output name=logging_info_violations_count::{len(violations)}")
 
 
 if __name__ == "__main__":

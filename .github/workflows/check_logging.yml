@@ -43,39 +43,63 @@ jobs:
         run: |
           python3 .github/scripts/check_logging.py
 
-      - name: Format output
+      - name: Format violations into markdown
         if: steps.logcheck.outputs.failed == 'true'
         id: set-output
         run: |
-          DETAILS=${{ steps.logcheck.outputs.logging_info_violations_details }}
-          if [ -z "$DETAILS" ]; then
-              DETAILS="No \`logging.info\` violations found."
-          else
-              DETAILS=$(echo $DETAILS | sed 's/;/\n/g')
-          fi
-          echo "details<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$DETAILS" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+            raw='${{ steps.logcheck.outputs.logging_info_violations_details }}'
+            echo "$raw" | jq -r '.[] | "\(.file):\(.line): \(.message)"' > formatted.txt
+            {
+            echo "details<<EOF"
+            cat formatted.txt
+            echo "EOF"
+            } >> "$GITHUB_OUTPUT"
 
-      - name: Comment on PR (violations found)
+      - name: Sticky comment (violations found)
         if: steps.logcheck.outputs.failed == 'true'
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          body="⚠️ Detected ${{ steps.logcheck.outputs.logging_info_violations_count }} \`logging.info\` statements in the code.
-                \`\`\`
+            header="<!-- logging-info-warning -->"
+            details="$(cat <<EOF
                 ${{ steps.set-output.outputs.details }}
-                \`\`\`"
+                EOF
+                )"
 
-          curl -s -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"body\": \"$body\"}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            body="$header
+            ⚠️ Detected ${{ steps.logcheck.outputs.logging_info_violations_count }} \`logging.info\` statements in the code.
+            \`\`\`
+            $details
+            \`\`\`"
 
-      - name: Comment on PR (no violations)
+            comment_id=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            --jq ".[] | select(.body | startswith(\"$header\")) | .id")
+
+            if [ -n "$comment_id" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$comment_id \
+                -X PATCH -f body="$body"
+            else
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+                -f body="$body"
+            fi
+
+      - name: Sticky comment (no violations)
         if: steps.logcheck.outputs.failed != 'true'
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -s -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"body": "✅ No `logging.info` violations found."}' \
-            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            header="<!-- logging-info-warning -->"
+            body="$header
+            ✅ No \`logging.info\` violations found."
+
+            comment_id=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            --jq ".[] | select(.body | startswith(\"$header\")) | .id")
+
+            if [ -n "$comment_id" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$comment_id \
+                -X PATCH -f body="$body"
+            else
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+                -f body="$body"
+            fi
+
