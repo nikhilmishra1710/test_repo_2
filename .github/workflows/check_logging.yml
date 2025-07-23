@@ -36,7 +36,7 @@ jobs:
         env:
           DIFF_RANGE: ${{ steps.diff.outputs.range }}
         run: |
-          python3 .github/scripts/check_logging.py)
+          python3 .github/scripts/check_logging.py
 
       - name: Format output
         if: steps.logcheck.outputs.failed == 'true'
