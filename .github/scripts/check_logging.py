@@ -61,7 +61,7 @@ def check_logging_info(filepath: str, diff_range: str) -> int:
 def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
     header = "<!-- logging-info-warning -->"
     if total_violations == 0:
-        body = f"{header}\nNo `logging.info` violations found."
+        body = f"{header}\nNo `logging.info` statements found."
     else:    
         details = "\n".join("{}:{}: {}".format(v['filepath'], v['lineno'], v['line']) for v in violations)
         body = f"{header}\n⚠️ Detected {total_violations} `logging.info` statements in the code.\n```\n{details}\n```"
