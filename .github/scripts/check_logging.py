@@ -136,6 +136,8 @@ def main():
     print(f"::set-output name=logging_info_violations_details::{json.dumps(violations)}")
     print(f"::set-output name=failed::true")
     print(f"::set-output name=logging_info_violations_count::{len(violations)}")
+    
+    post_sticky_comment(violations, total_violations)
 
 
 if __name__ == "__main__":
