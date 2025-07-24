@@ -109,7 +109,11 @@ def post_sticky_comment(violations: List[dict], total_violations: int) -> None:
 def main():
     diff_range = os.environ.get("DIFF_RANGE", "HEAD^..HEAD")
     changed_files = get_changed_files(diff_range)
-    
+
+    if not changed_files:
+        print("No Python files changed in the specified diff range.")
+        return
+    file_counts = {}
     total_violations = 0
     violations = []
     for file in changed_files:
