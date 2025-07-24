@@ -2,6 +2,7 @@ import subprocess
 import requests
 import os
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -179,11 +180,51 @@ def check_action_run(pr_number: int) -> None:
         for run in runs:
             if run.get('pull_requests', [{}])[0].get('number') == pr_number:
                 print(f"Action run found for PR #{pr_number}: {run.get('html_url', 'No URL provided')}")
+                check_action_status(run.get('id'))
                 return
         
         print(f"No action run found for PR #{pr_number}.")
     except Exception as e:
         print(f"Failed to check action run for PR #{pr_number}")
+        raise e
+
+def check_action_status(id) -> None:
+    run_data = {"status": "unknown", "conclusion": "unknown"}
+    try:
+        while run_data["status"] not in ["completed", "in_progress"]:
+            time.sleep(2)
+            print("Waiting for action run to complete...")
+            response = requests.get(
+                f"https://api.github.com/repos/{owner}/{repo_name}/actions/runs/{id}",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github.v3+json"
+                }
+            )
+            if response.status_code != 200:
+                raise Exception(f"Failed to fetch action run status: {response.json()}")
+            
+            run_data = response.json()
+            print(f"Current status: {run_data.get('status', 'Unknown')}, Conclusion: {run_data.get('conclusion', 'Unknown')}")
+        print(f"Checking action status for run ID {id}.")
+        response = requests.get(
+            f"https://api.github.com/repos/{owner}/{repo_name}/actions/runs/{id}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+        )
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch action run status: {response.json()}")
+        
+        run_data = response.json()
+        print(f"Action run status: {run_data.get('status', 'Unknown')}, Conclusion: {run_data.get('conclusion', 'Unknown')}")
+        if run_data.get('status') == 'completed' and run_data.get('conclusion') == 'success':
+            print("Action run completed successfully.")
+        else:
+            print("Action run did not complete successfully.")
+    except Exception as e:
+        print(f"Failed to check action status for run ID {id}")
         raise e
 
 def main():
