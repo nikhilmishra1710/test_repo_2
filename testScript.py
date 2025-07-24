@@ -9,7 +9,6 @@ load_dotenv()
 token = os.getenv("TOKEN")
 owner = 'nikhilmishra1710'
 repo_name = 'test_repo_2'
-repo = 'nikhilmishra1710/test_repo_2'
 
 def create_branch(branch_name: str) -> None:
     try:
@@ -167,7 +166,6 @@ def check_action_run(pr_number: int) -> None:
                 "Authorization": f"Bearer {token}",
                 "Accept": "application/vnd.github.v3+json"
             },
-            params={"branch": "test1", "status": "completed"}
         )
         if response.status_code != 200:
             raise Exception(f"Failed to fetch action runs: {response.json()}")
