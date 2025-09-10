@@ -46,6 +46,13 @@ jobs:
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           echo "Will create tag: $NEW_TAG"
 
+      - name: Ensure tag does not already exist
+        run: |
+          if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+            echo "Tag $NEW_TAG already exists, skipping"
+            exit 0
+          fi
+
       - name: Create and push tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -66,7 +73,7 @@ jobs:
             -d @- <<EOF
           {
             "tag_name": "${NEW_TAG}",
-            "name": "Release ${NEW_TAG}",
+            "name": "Release ${NEW_TAG} (PR #${{ github.event.pull_request.number }})",
             "body": "Automatically generated release\n- PR #${{ github.event.pull_request.number }} merged\n- Commit: ${{ github.sha }}",
             "draft": false,
             "prerelease": false
