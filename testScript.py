@@ -168,7 +168,7 @@ def check_action_run(pr_number: int) -> None:
             },
         )
         if response.status_code != 200:
-            raise Exception(f"Failed to fetch action runs: {response.json()}")
+            raise Exception(f"Failed t    o fetch action runs: {response.json()}")
         
         runs = response.json().get('workflow_runs', [])
         if not runs:
