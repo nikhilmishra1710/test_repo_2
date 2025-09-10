@@ -1,0 +1,74 @@
+name: Auto Tag and Release on Merge
+
+on:
+  pull_request:
+    branches: [test1]
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  tag_and_release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout and fetch base
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}"
+          git fetch origin main --tags
+          git checkout -b main origin/main
+          echo "Checkout done"
+
+      - name: Get current date
+        id: date
+        run: echo "DATE=$(date +'%Y.%m.%d')" >> $GITHUB_ENV
+
+      - name: Get latest tag for today
+        id: latest
+        run: |
+          TAG_PREFIX="${DATE}."
+          LAST_TAG=$(git tag --list "${TAG_PREFIX}*" | sort -V | tail -n 1)
+
+          if [ -z "$LAST_TAG" ]; then
+            NEW_TAG="${TAG_PREFIX}01"
+          else
+            LAST_NUM=$(echo $LAST_TAG | awk -F. '{print $4}')
+            NEXT_NUM=$(printf "%02d" $((10#$LAST_NUM + 1)))
+            NEW_TAG="${TAG_PREFIX}${NEXT_NUM}"
+          fi
+
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+          echo "Will create tag: $NEW_TAG"
+
+      - name: Create and push tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag $NEW_TAG
+          git push origin $NEW_TAG
+
+      - name: Create GitHub Release via API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/releases \
+            -d @- <<EOF
+          {
+            "tag_name": "${NEW_TAG}",
+            "name": "Release ${NEW_TAG}",
+            "body": "Automatically generated release\n- PR #${{ github.event.pull_request.number }} merged\n- Commit: ${{ github.sha }}",
+            "draft": false,
+            "prerelease": false
+          }
+          EOF

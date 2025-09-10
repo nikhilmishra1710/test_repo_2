@@ -176,10 +176,11 @@ def check_action_run(pr_number: int) -> None:
             return
         
         for run in runs:
-            if run.get('pull_requests', [{}])[0].get('number') == pr_number:
-                print(f"Action run found for PR #{pr_number}: {run.get('html_url', 'No URL provided')}")
-                check_action_status(run.get('id'))
-                return
+            for pr in run.get("pull_requests", []):
+                if pr.get("number") == pr_number:
+                    print(f"Action run found for PR #{pr_number}: {run.get('html_url', 'No URL provided')}")
+                    check_action_status(run.get('id'))
+                    return
         
         print(f"No action run found for PR #{pr_number}.")
     except Exception as e:
