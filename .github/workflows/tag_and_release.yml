@@ -21,8 +21,8 @@ jobs:
         run: |
           git init
           git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}"
-          git fetch origin main --tags
-          git checkout -b main origin/main
+          git fetch origin test1 --tags
+          git checkout -b test1 origin/test1
           echo "Checkout done"
 
       - name: Get current date
