@@ -65,20 +65,27 @@ jobs:
       - name: Create GitHub Release via API
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          TITLE=$(jq -Rn --arg v "$PR_TITLE" '$v')
+          jq -n \
+            --arg tag "${NEW_TAG}" \
+            --arg pr_number "$PR_NUMBER" \
+            --arg pr_title "$PR_TITLE" \
+            --arg sha "$COMMIT_SHA" \
+            '{
+              tag_name: $tag,
+              name: ("Release " + $tag + " (PR #" + $pr_number + ")"),
+              body: ("Automatically generated release\n- PR #" + $pr_number + " merged\n- Title: " + $pr_title + "\n- Commit: " + $sha),
+              draft: false,
+              prerelease: false
+            }' > release.json
+
+          cat release.json # debug (optional)
 
           curl -s -X POST \
             -H "Authorization: token $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${GITHUB_REPOSITORY}/releases \
-            -d @- <<EOF
-          {
-            "tag_name": "${NEW_TAG}",
-            "name": "Release ${NEW_TAG} (PR #${{ github.event.pull_request.number }})",
-            "body": "Automatically generated release\n- PR ${TITLE} #${{ github.event.pull_request.number }} merged\n\n- Commit: ${{ github.sha }}",
-            "draft": false,
-            "prerelease": false
-          }
-          EOF
+            -d @release.json
