@@ -2,7 +2,7 @@ name: Auto Tag and Release on Merge
 
 on:
   pull_request:
-    branches: [test1]
+    branches: [master]
     types: [closed]
 
 permissions:
@@ -21,8 +21,8 @@ jobs:
         run: |
           git init
           git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}"
-          git fetch origin test1 --tags
-          git checkout -b test1 origin/test1
+          git fetch origin master --tags
+          git checkout -b master origin/master
           echo "Checkout done"
 
       - name: Get current date
