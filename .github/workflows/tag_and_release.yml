@@ -65,7 +65,10 @@ jobs:
       - name: Create GitHub Release via API
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
+          TITLE=$(jq -Rn --arg v "$PR_TITLE" '$v')
+
           curl -s -X POST \
             -H "Authorization: token $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
@@ -74,7 +77,7 @@ jobs:
           {
             "tag_name": "${NEW_TAG}",
             "name": "Release ${NEW_TAG} (PR #${{ github.event.pull_request.number }})",
-            "body": "Automatically generated release\n- PR #${{ github.event.pull_request.number }} merged\n- Commit: ${{ github.sha }}",
+            "body": "Automatically generated release\n- PR ${TITLE} #${{ github.event.pull_request.number }} merged\n\n- Commit: ${{ github.sha }}",
             "draft": false,
             "prerelease": false
           }
