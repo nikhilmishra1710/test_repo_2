@@ -172,7 +172,7 @@ def check_action_run(pr_number: int) -> None:
         
         runs = response.json().get('workflow_runs', [])
         if not runs:
-            print("No completed action runs found.")
+            print("No completed action               runs found.")
             return
         
         for run in runs:
