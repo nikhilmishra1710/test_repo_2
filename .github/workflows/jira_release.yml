@@ -1,0 +1,15 @@
+name: Jira release for tag
+
+on:
+  push:
+    branches: [master]
+    tags: "*"
+
+jobs:
+  jira_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug val
+        env:
+          GH_TAG: ${{ github.ref_name }}
+        run: echo "GH_TAG is $GH_TAG"

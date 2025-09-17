@@ -130,13 +130,14 @@ jobs:
         if: success()
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_PROJECT: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_USER: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
           VERSION_ID: ${{ env.VERSION_ID }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "Looking for Jira issue keys in PR title: $PR_TITLE"
-          ISSUE_KEYS=$(echo "$PR_TITLE" | grep -oE '[A-Z]+-[0-9]+' || true)
+          ISSUE_KEYS=$(echo "$PR_TITLE" | grep -oE "$JIRA_PROJECT-[0-9]+" || true)
           echo "Issue keys: $ISSUE_KEYS"
           for ISSUE in $ISSUE_KEYS; do
             echo "Linking $ISSUE to version $VERSION_ID"
