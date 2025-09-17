@@ -1,48 +1,51 @@
 name: Jira release for PR merge
 
 on:
-    push:
-        tags:
-            - "*"
+  push:
+    tags:
+      - '*'   # match all tags
 
 jobs:
-    jira_release:
-        runs-on: ubuntu-latest
+  jira_release:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
+    steps:
+      - name: Debug refs
+        run: |
+          echo "ref: ${{ github.ref }}"
+          echo "ref_name: ${{ github.ref_name }}"
+          echo "ref_type: ${{ github.ref_type }}"
 
-            - name: Create Jira release version
-              env:
-                  JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
-                  JIRA_PROJECT: ${{ secrets.JIRA_PROJECT_KEY }}
-                  JIRA_USER: ${{ secrets.JIRA_EMAIL }}
-                  JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-                  GIT_TAG: ${{ github.ref_name }}
-              run: |
-                  echo "Creating Jira release for tag $GIT_TAG"
+      - name: Checkout
+        uses: actions/checkout@v3
 
-                  # Create version payload
-                  jq -n \
-                    --arg project "$JIRA_PROJECT" \
-                    --arg name "$GIT_TAG" \
-                    --arg desc "Release created from GitHub tag $GIT_TAG" \
-                    '{
-                      name: $name,
-                      description: $desc,
-                      released: true,
-                      project: $project
-                    }' > version.json
+      - name: Create Jira release version
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_PROJECT: ${{ secrets.JIRA_PROJECT_KEY }}
+          JIRA_USER: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          GIT_TAG: ${{ github.ref_name }}
+        run: |
+          echo "Creating Jira release for tag $GIT_TAG"
 
-                  cat version.json
+          jq -n \
+            --arg project "$JIRA_PROJECT" \
+            --arg name "$GIT_TAG" \
+            --arg desc "Release created from GitHub tag $GIT_TAG" \
+            '{
+              name: $name,
+              description: $desc,
+              released: true,
+              project: $project
+            }' > version.json
 
-                  # Call Jira API
-                  RESPONSE=$(curl -s -o response.json -w "%{http_code}" \
-                    -u "$JIRA_USER:$JIRA_TOKEN" \
-                    -H "Content-Type: application/json" \
-                    -X POST \
-                    --data @version.json \
-                    "$JIRA_BASE_URL/rest/api/3/version")
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" \
+            -u "$JIRA_USER:$JIRA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            --data @version.json \
+            "$JIRA_BASE_URL/rest/api/3/version")
 
-                  echo
+          echo "HTTP Response: $RESPONSE"
+          cat response.json
