@@ -1,4 +1,4 @@
-name: Auto Tag and Release on Merge Github
+name: Auto Tag and Release on Merge
 
 on:
   pull_request:
