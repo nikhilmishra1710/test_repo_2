@@ -1,4 +1,4 @@
-name: Auto Tag and Release on Merge Github + Jira
+name: Auto Tag and Release on Merge Github
 
 on:
   pull_request:
