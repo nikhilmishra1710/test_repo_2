@@ -2,7 +2,7 @@ name: check-logging
 
 on:
   pull_request:
-    branches: [test1]
+    branches: [master]
 
 permissions:
   contents: read
@@ -18,15 +18,15 @@ jobs:
         run: |
             git init
             git remote add origin "${{ github.event.repository.clone_url }}"
-            git fetch origin test1
+            git fetch origin master
             git fetch origin ${{ github.head_ref }}
             git checkout -b pr_branch origin/${{ github.head_ref }}
-            git branch --track test1 origin/test1
+            git branch --track master origin/master
 
       - name: Determine diff range
         id: diff
         run: |
-            base=$(git merge-base test1 pr_branch)
+            base=$(git merge-base master pr_branch)
             echo "range=$base...pr_branch" >> "$GITHUB_OUTPUT"
 
 
