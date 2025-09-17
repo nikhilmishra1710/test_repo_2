@@ -89,3 +89,34 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${GITHUB_REPOSITORY}/releases \
             -d @release.json
+
+      - name: Create Jira release version
+        if: success()
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_PROJECT: ${{ secrets.JIRA_PROJECT_KEY }}
+          JIRA_USER: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          echo "Creating Jira release for tag $NEW_TAG"
+
+          jq -n \
+            --arg project "$JIRA_PROJECT" \
+            --arg name "$NEW_TAG" \
+            --arg desc "Release created from GitHub tag $NEW_TAG" \
+            '{
+              name: $name,
+              description: $desc,
+              released: true,
+              project: $project
+            }' > version.json
+
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" \
+            -u "$JIRA_USER:$JIRA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            --data @version.json \
+            "$JIRA_BASE_URL/rest/api/3/version")
+
+          echo "HTTP Response: $RESPONSE"
+          cat response.json
