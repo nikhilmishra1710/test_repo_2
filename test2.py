@@ -9,7 +9,7 @@ class Test:
         assert True
         
     def test_another_logging(self):
-        logging.info("Another  test log")
+        logging.info("Another test log")
         assert True
         
     def test_no_logging(self):
