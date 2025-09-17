@@ -159,7 +159,7 @@ jobs:
             
             cat data.json
             # Convert ISSUE_KEYS to an array to handle multiple issues safely
-            read -r -a ISSUES_ARRAY <<< "$ISSUE_KEYS"
+            read -r -a ISSUES_ARRAY <<< "$(echo "$ISSUE_KEYS" | tr '\n' ' ')"
 
             for ISSUE in "${ISSUES_ARRAY[@]}"; do
               echo "Linking $ISSUE to version $VERSION_ID"
