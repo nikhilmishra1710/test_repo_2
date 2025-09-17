@@ -77,12 +77,12 @@ jobs:
             '{
               tag_name: $tag,
               name: ("Release " + $tag + " (PR #" + $pr_number + ")"),
-              body: ("Automatically generated release\n- **Title**: " + $pr_title + "\n- **PR** #" + $pr_number + " merged\n- **Commit**: " + $sha),
+              body: ("Automatically generated release\n- Title: " + $pr_title + "\n- PR #" + $pr_number + " merged\n- Commit: " + $sha),
               draft: false,
               prerelease: false
             }' > release.json
 
-          cat release.json # debug (optional)
+          cat release.json
 
           curl -s -X POST \
             -H "Authorization: token $GH_TOKEN" \
