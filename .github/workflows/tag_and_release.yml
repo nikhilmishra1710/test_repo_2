@@ -93,5 +93,5 @@ jobs:
       
       - name: Set Output variables
         run: |
-          echo "TAG_NAME=$(echo NEW_TAG)" >> GITHUB_OUTPUT
-          echo "PR_TITLE=$(echo ${{ github.event.pull_request.title }})" >> GITHUB_OUTPUT
+          echo "TAG_NAME=${{ env.NEW_TAG }}" >> GITHUB_OUTPUT
+          echo "PR_TITLE=${{ github.event.pull_request.title }}" >> GITHUB_OUTPUT
