@@ -89,3 +89,8 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${GITHUB_REPOSITORY}/releases \
             -d @release.json
+      - name: Set outputs
+        id: outputs
+        run: |
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT

@@ -15,7 +15,7 @@ jobs:
       - name: Set environment variables from workflow_run
         run: |
           echo "NEW_TAG=${{ github.event.workflow_run.outputs.NEW_TAG }}" >> $GITHUB_ENV
-          echo "PR_TITLE=${{ github.event.workflow_run.head_commit.message }}" >> $GITHUB_ENV
+          echo "PR_TITLE=${{ github.event.workflow_run.outputs.PR_TITLE }}" >> $GITHUB_ENV
 
       - name: Create Jira release version
         env:
@@ -54,6 +54,7 @@ jobs:
           echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
 
       - name: Link Jira issues to release
+        if: success()
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
           JIRA_USER: ${{ secrets.JIRA_EMAIL }}
