@@ -139,6 +139,8 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "Looking for Jira issue keys in PR title: $PR_TITLE"
+
+          # Extract issue keys safely
           ISSUE_KEYS=$(echo "$PR_TITLE" | grep -oE "$JIRA_PROJECT-[0-9]+" || true)
           echo "Issue keys found: $ISSUE_KEYS"
 
@@ -154,8 +156,12 @@ jobs:
                   ]
                 }
               }' > data.json
+            
+            cat data.json
+            # Convert ISSUE_KEYS to an array to handle multiple issues safely
+            read -r -a ISSUES_ARRAY <<< "$ISSUE_KEYS"
 
-            for ISSUE in $ISSUE_KEYS; do
+            for ISSUE in "${ISSUES_ARRAY[@]}"; do
               echo "Linking $ISSUE to version $VERSION_ID"
               curl -s -o link_response.json -w "%{http_code}" \
                 -u "$JIRA_USER:$JIRA_TOKEN" \
@@ -164,5 +170,7 @@ jobs:
                 --data @data.json \
                 "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE"
             done
+          fi
 
           echo "Linking complete"
+
