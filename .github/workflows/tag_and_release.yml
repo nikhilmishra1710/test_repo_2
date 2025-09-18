@@ -101,20 +101,25 @@ jobs:
           NEW_TAG: ${{ env.NEW_TAG }}
         run: |
           echo "Creating Jira release for tag $NEW_TAG"
-          
+
           REPO_URL="https://github.com/${{ github.repository }}"
           TAG_URL="$REPO_URL/releases/tag/$NEW_TAG"
 
-          DESCRIPTION="Release created from GitHub tag $NEW_TAG: $TAG_URL"
+          DESCRIPTION="Release created from GitHub tag $NEW_TAG
+          GitHub Release: $TAG_URL
+          PR Title: $PR_TITLE"
+
           jq -n \
             --arg project "$JIRA_PROJECT" \
             --arg name "$NEW_TAG" \
             --arg desc "$DESCRIPTION" \
+            --arg url "$TAG_URL" \
             '{
               name: $name,
               description: $desc,
               released: true,
-              project: $project
+              project: $project,
+              url: $url
             }' > version.json
 
           cat version.json
