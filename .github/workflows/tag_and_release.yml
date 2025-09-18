@@ -99,6 +99,7 @@ jobs:
           JIRA_USER: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
           NEW_TAG: ${{ env.NEW_TAG }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "Creating Jira release for tag $NEW_TAG"
 
