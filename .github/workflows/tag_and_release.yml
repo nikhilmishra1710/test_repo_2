@@ -176,12 +176,14 @@ jobs:
 
             for ISSUE in "${ISSUES_ARRAY[@]}"; do
               echo "Linking $ISSUE to version $VERSION_ID"
-              curl -s -o link_response.json -w "%{http_code}" \
+              RESPONSE=$(curl -s -o link_response.json -w "%{http_code}" \
                 -u "$JIRA_USER:$JIRA_TOKEN" \
                 -H "Content-Type: application/json" \
                 -X PUT \
                 --data @data.json \
-                "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE"
+                "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE")
+              echo "Issue: $ISSUE Response code: $RESPONSE"
+              cat link_response.json
             done
           fi
 
