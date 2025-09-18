@@ -5,7 +5,7 @@ logging.debug("Byee world")
 
 logging.info("This is a test log  ")
 
-if "some logging.info" in "some logging.info":
+if "logging.info" in "some logging.info":
     logging.info("Another test og")
     logging.info("Yet anoth           er test log")
     
