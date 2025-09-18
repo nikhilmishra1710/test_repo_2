@@ -10,7 +10,6 @@ class Test:
         
     def test_another_logging(self):
         logging.info("Another test log")
-        assert True
         
     def test_no_logging(self):
         logging.info("This is not a test log")
