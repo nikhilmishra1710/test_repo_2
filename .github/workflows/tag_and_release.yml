@@ -105,21 +105,19 @@ jobs:
           REPO_URL="https://github.com/${{ github.repository }}"
           TAG_URL="$REPO_URL/releases/tag/$NEW_TAG"
 
-          DESCRIPTION="Release created from GitHub tag $NEW_TAG"
-          NOTES="GitHub Release: $TAG_URL
+          DESCRIPTION="Release created from GitHub tag $NEW_TAG
+          GitHub Release: $TAG_URL
           PR Title: $PR_TITLE"
 
           jq -n \
             --arg project "$JIRA_PROJECT" \
             --arg name "$NEW_TAG" \
             --arg desc "$DESCRIPTION" \
-            --arg notes "$NOTES" \
             '{
               name: $name,
               description: $desc,
               released: true,
               project: $project,
-              releaseNotes: $notes
             }' > version.json
 
           cat version.json
@@ -133,6 +131,9 @@ jobs:
 
           echo "HTTP Response: $RESPONSE"
           cat response.json
+          if [ $RESPONSE -ne 201 ]; then
+            exit 1
+          fi
 
       - name: Extract Jira version ID
         run: |
