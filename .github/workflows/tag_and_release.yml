@@ -105,7 +105,7 @@ jobs:
           REPO_URL="https://github.com/${{ github.repository }}"
           TAG_URL="$REPO_URL/releases/tag/$NEW_TAG"
 
-          DESCRIPTION="Release created from GitHub tag [$NEW_TAG]($TAG_URL)"
+          DESCRIPTION="Release created from GitHub tag $NEW_TAG: $TAG_URL"
           jq -n \
             --arg project "$JIRA_PROJECT" \
             --arg name "$NEW_TAG" \
