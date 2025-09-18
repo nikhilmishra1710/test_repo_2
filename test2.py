@@ -5,7 +5,7 @@ logging.debug("Byee world")
 
 class Test:
     def test_logging(self):
-        logging.info("This is   test log")
+        logging.info("This is test log")
         assert True
         
     def test_another_logging(self):
