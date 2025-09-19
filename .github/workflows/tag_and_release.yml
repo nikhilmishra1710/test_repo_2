@@ -94,7 +94,7 @@ jobs:
       - name: Create Jira release version
         if: success()
         env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_BASE_URL: ${{ vars.JIRA_URL }}
           JIRA_PROJECT: ${{ secrets.JIRA_PROJECT_KEY }}
           JIRA_USER: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
