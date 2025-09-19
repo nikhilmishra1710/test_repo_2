@@ -152,7 +152,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "Looking for Jira issue keys in PR title: $PR_TITLE"
-
+          echo "$JIRA_BASE_URL"
           # Extract issue keys safely
           ISSUE_KEYS=$(echo "$PR_TITLE" | grep -oE "$JIRA_PROJECT-[0-9]+" || true)
           echo "Issue keys found: $ISSUE_KEYS"
